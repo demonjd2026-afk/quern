@@ -1,0 +1,5 @@
+customer_id,name,email,region,credit_limit
+1,Asha Rao,asha@example.com,South,5000
+2,Ben Okafor,ben@example.com,North,2500.5
+3,Chen Li,chen@example.com,South,10000
+4,Dara Singh,dara@example.com,West,750

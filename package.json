@@ -1,0 +1,24 @@
+{
+  "name": "quern",
+  "version": "0.1.0",
+  "description": "A typed data-pipeline language where data bugs are compile errors. Compiles to SQL.",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "quern": "dist/cli.js" },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "quern": "node --experimental-strip-types src/cli.ts"
+  },
+  "devDependencies": {
+    "@duckdb/node-api": "2.0.1-r.1",
+    "@types/node": "^22",
+    "typescript": "7.0.2",
+    "vitest": "5.1.2"
+  }
+}

@@ -1,0 +1,77 @@
+-- A small shop: four sources, four pipelines, two published tables.
+-- Try it:  quern run examples/shop/shop.quern
+
+source customers from "data/customers.csv" {
+  customer_id:  int key,
+  name:         text pii,
+  email:        text pii,
+  region:       text,
+  credit_limit: float<USD>,
+}
+
+source orders from "data/orders.csv" {
+  order_id:    int key,
+  customer_id: int,
+  placed_on:   date,
+  amount:      float<USD>,
+  discount:    float<USD>?,     -- not every order has one
+  shipped:     bool,
+}
+
+source order_items from "data/order_items.csv" {
+  order_id:   int,
+  line_no:    int,
+  product_id: int,
+  quantity:   int,
+  key (order_id, line_no),
+}
+
+source products from "data/products.csv" {
+  product_id: int key,
+  title:      text,
+  price:      float<USD>,
+  weight:     int<g>?,
+}
+
+-- discount is nullable, so it needs a default before it can be subtracted.
+pipeline shipped_orders {
+  from orders
+  where shipped and placed_on >= @2026-10-01
+  let net = amount - discount ?? 0 USD
+}
+
+-- customer_id is the key of customers, so this join cannot multiply orders
+-- and sum(net) is safe. sum(credit_limit) here would be a compile error.
+pipeline revenue_by_region {
+  from shipped_orders
+  join customers on customer_id = customers.customer_id
+  group by region {
+    revenue   = sum(net),
+    orders    = count(),
+    customers = count_distinct(customer_id),
+  }
+  order by revenue desc
+}
+
+-- quantity is at the order-line grain, so quantity * price is safe to sum
+-- even though each product row repeats once per line.
+pipeline top_products {
+  from order_items
+  join products on product_id = products.product_id
+  let line_total = quantity * price
+  group by product_id, title {
+    units = sum(quantity),
+    sales = sum(line_total),
+  }
+  order by sales desc, product_id
+  limit 3
+}
+
+-- email is PII; hash() is the only way it may reach a public sink.
+pipeline customer_directory {
+  from customers
+  select customer_id, region, email_hash = hash(email)
+}
+
+publish revenue_by_region  to public "out/revenue_by_region.csv"
+publish customer_directory to public "out/customer_directory.csv"
