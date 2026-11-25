@@ -112,6 +112,16 @@ pipeline t { from joined group by region { x = sum(credit_limit) } }`;
   });
 });
 
+describe('declaration order', () => {
+  it('sources may be declared after the pipelines that read them', () => {
+    const source = 'pipeline t { from s where n > 0 }\nsource s from "s.csv" { n: int }';
+    expect(compileOk(source).sql.indexOf('VIEW "s"')).toBeLessThan(compileOk(source).sql.indexOf('VIEW "t"'));
+  });
+  it('a pipeline must be defined before it is read', () => {
+    expect(codes('source s from "s.csv" { n: int }\npipeline a { from b }\npipeline b { from s }')).toEqual(['E0102']);
+  });
+});
+
 describe('sql output', () => {
   it('emits one CTE per step and casts computed columns to their inferred type', () => {
     const { sql } = compileOk(p('from orders where shipped let net = amount - discount ?? 0 USD'));

@@ -44,6 +44,20 @@ Three further rules follow from the same idea:
 - `sum`, `avg`, `min` and `max` over a whole table (a `group` with no keys) are nullable, because the table may be empty. With group keys they are not.
 - `limit` needs an `order by` directly before it, and the compiler warns when the order can have ties.
 
+## Playground
+
+The compiler and the interpreter also run in the browser. The playground has five pipelines that SQL runs without complaint, each with the diagnostic Quern gives and a one-click fix, plus the generated SQL, the result rows and the inferred types for whatever you type.
+
+The data is editable too. The Data tab shows the sample files as tables and as CSV text; change a value and the results change, blank a non-null value or repeat a key and the load is rejected. You can add a file of your own and have a `source` declaration drafted from its header and rows.
+
+```sh
+npm install
+npm run playground          # dev server
+npm run playground:build    # static site in dist-playground/
+```
+
+The built page makes no network requests and ships a Content Security Policy that says so.
+
 ## Try it
 
 Requires Node 22 or later.
@@ -92,7 +106,7 @@ pipeline revenue_by_region {
 publish revenue_by_region to public "out/revenue_by_region.csv"
 ```
 
-A program is a list of `source`, `pipeline` and `publish` declarations. A pipeline is a `from` followed by steps, read top to bottom:
+A program is a list of `source`, `pipeline` and `publish` declarations. Sources may be declared anywhere in the file; a pipeline must be defined before another one reads it. A pipeline is a `from` followed by steps, read top to bottom:
 
 | Step | Form |
 | --- | --- |
@@ -142,7 +156,7 @@ The ideas here are not new one by one, and Quern does not claim they are. Units 
 
 ## Status
 
-Built for the Syntax Summit hackathon. Working today: the compiler, the interpreter, the CLI and the test suite. Planned before the deadline: a browser playground, editor support, and a language reference.
+Built for the Syntax Summit hackathon. Working today: the compiler, the interpreter, the CLI, the browser playground and the test suite. Planned before the deadline: editor support and a language reference.
 
 ## License
 

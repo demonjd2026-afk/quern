@@ -4,21 +4,50 @@
   "description": "A typed data-pipeline language where data bugs are compile errors. Compiles to SQL.",
   "license": "MIT",
   "type": "module",
-  "bin": { "quern": "dist/cli.js" },
+  "bin": {
+    "quern": "dist/cli.js"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
-  "engines": { "node": ">=22" },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "quern": "node --experimental-strip-types src/cli.ts"
+    "quern": "node --experimental-strip-types src/cli.ts",
+    "playground": "vite --config playground/vite.config.ts",
+    "playground:build": "tsc -p playground/tsconfig.json && vite build --config playground/vite.config.ts"
   },
   "devDependencies": {
+    "@codemirror/commands": "^6.11.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/lint": "^6.9.8",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.44.0",
     "@duckdb/node-api": "2.0.1-r.1",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/sora": "^5.3.0",
+    "@lezer/highlight": "^1.2.5",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^22",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "motion": "^14.14.0",
+    "playwright-core": "^1.65.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.5",
+    "three": "^0.187.0",
     "typescript": "7.0.2",
+    "vite": "^8.3.8",
     "vitest": "5.1.2"
   }
 }

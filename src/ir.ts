@@ -110,7 +110,7 @@ export interface TPublish {
 export type TItem = TSource | TPipeline | TPublish;
 
 export interface TProgram {
-  /** Declarations in source order; every reference points backwards. */
+  /** Sources first, then pipelines and publishes in source order; every reference points backwards. */
   items: TItem[];
 }
 

@@ -41,9 +41,17 @@ class Checker {
   }
 
   run(program: A.Program): TProgram {
+    // Sources are hoisted: they may be declared anywhere in the file, so a
+    // program can lead with its pipelines. Pipelines must be defined before use.
     const items: TItem[] = [];
     for (const decl of program.decls) {
-      const item = decl.kind === 'source' ? this.source(decl) : decl.kind === 'pipeline' ? this.pipeline(decl) : this.publish(decl);
+      if (decl.kind !== 'source') continue;
+      const item = this.source(decl);
+      if (item) items.push(item);
+    }
+    for (const decl of program.decls) {
+      if (decl.kind === 'source') continue;
+      const item = decl.kind === 'pipeline' ? this.pipeline(decl) : this.publish(decl);
       if (item) items.push(item);
     }
     return { items };
