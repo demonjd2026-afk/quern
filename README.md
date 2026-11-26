@@ -1,12 +1,65 @@
-# Quern
+<p align="center">
+  <a href="https://youtu.be/UxnmX8paP7I"><img src="docs/demo-thumbnail.png" alt="Quern demo video: data bugs are compile errors" width="720"></a>
+</p>
 
-![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)
-![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20dependencies-0-success.svg)
+<h1 align="center">Quern</h1>
 
-**A typed data-pipeline language where data bugs are compile errors.** Quern compiles to SQL.
+<p align="center"><strong>Data bugs are compile errors.</strong><br>
+A small typed language for data pipelines. It compiles to SQL, and refuses to compile the mistakes SQL runs without a word: double-counted totals, rows lost to nulls, dollars added to grams, and personal data in a public table.</p>
 
-**[Try it in the browser](https://demonjd2026-afk.github.io/quern/)**: nothing to install, and nothing leaves the page.
+<p align="center">
+  <a href="https://demonjd2026-afk.github.io/quern/"><strong>Live playground</strong></a> ·
+  <a href="https://youtu.be/UxnmX8paP7I"><strong>Demo video</strong></a> ·
+  <a href="#try-it"><strong>Try it</strong></a> ·
+  <a href="#the-language-in-one-example"><strong>The language</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/demonjd2026-afk/quern/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/demonjd2026-afk/quern/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/demonjd2026-afk/quern/actions/workflows/pages.yml"><img alt="Playground deploy" src="https://github.com/demonjd2026-afk/quern/actions/workflows/pages.yml/badge.svg"></a>
+  <img alt="Node 22+" src="https://img.shields.io/badge/node-22%2B-brightgreen">
+  <img alt="Runtime dependencies: 0" src="https://img.shields.io/badge/runtime%20dependencies-0-success">
+  <img alt="Compiles to DuckDB SQL" src="https://img.shields.io/badge/compiles%20to-DuckDB%20SQL-FFF000">
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
+
+Built by [Jayanth Dolai](https://www.linkedin.com/in/jayanth-dolai-7b115213a/) for the **Syntax Summit** hackathon on Devpost, whose challenge is to design and build a domain-specific language. Quern's domain is data pipelines.
+
+## Demo video
+
+**[▶ Watch on YouTube (2:40)](https://youtu.be/UxnmX8paP7I)**: a join that double-counts and the one-click fix, the generated SQL, nulls, units and personal data, editing the data, and how the compiler is built and tested.
+
+## Contents
+
+- [Demo video](#demo-video)
+- [At a glance](#at-a-glance)
+- [The problem](#the-problem)
+- [What the type system tracks](#what-the-type-system-tracks)
+- [Architecture](#architecture)
+- [Playground](#playground)
+- [Try it](#try-it)
+- [The language in one example](#the-language-in-one-example)
+- [Tests](#tests)
+- [Security](#security)
+- [Project layout](#project-layout)
+- [Limits, stated plainly](#limits-stated-plainly)
+- [Related work](#related-work)
+- [Status](#status)
+- [License](#license)
+
+## At a glance
+
+| | |
+|---|---|
+| **What it is** | A typed language for data pipelines that compiles to DuckDB SQL |
+| **What it catches** | Joins that multiply rows, sums over repeated values, unhandled nulls, mixed units, and personal data sent to a public sink, all before any data runs |
+| **How you see it** | 23 diagnostics, each with a code, the exact source position and a hint for the fix |
+| **Two back ends** | A SQL generator and an interpreter that runs the same typed program |
+| **Proof** | 84 tests. Every test pipeline runs through both back ends over the example data and 40 random data sets, and the rows must match |
+| **Where it runs** | A command-line tool on Node 22 or later, and a browser playground that makes no network requests |
+| **Stack** | TypeScript with no runtime dependencies. The playground is React and Vite on GitHub Pages |
+
+## The problem
 
 SQL will happily run a query that double-counts revenue, drops the rows with a null in them, adds dollars to grams, or copies email addresses into a public table. Each of those is a wrong answer, not an error, so it is found later, by someone looking at a dashboard.
 
@@ -46,21 +99,36 @@ Three further rules follow from the same idea:
 - `sum`, `avg`, `min` and `max` over a whole table (a `group` with no keys) are nullable, because the table may be empty. With group keys they are not.
 - `limit` needs an `order by` directly before it, and the compiler warns when the order can have ties.
 
+## Architecture
+
+![Quern architecture: one front end, one typed program, two back ends tested against each other](docs/architecture.png)
+
+The compiler is written in TypeScript with no runtime dependencies. `compile()` is a pure function from text to diagnostics, typed program and SQL, so it runs in a browser as well as in Node.
+
+There are two back ends on purpose. The SQL generator is the product. The interpreter is the oracle: the test suite runs every test pipeline through both and requires identical rows. That check has already caught a real defect during development (the SQL read CSV columns by position while the interpreter read them by name).
+
+### What the guarantees rest on
+
+The checker reasons from what each `source` declares. If a file breaks a declaration (a null in a non-null column, a repeated key), the conclusions do not hold. So the declarations are checked against the data: the interpreter refuses such a file when it loads it, and `quern verify` emits a SQL query that returns one row per violated declaration.
+
 ## Playground
 
-Live at **https://demonjd2026-afk.github.io/quern/**.
+Live at **https://demonjd2026-afk.github.io/quern/**. The compiler and the interpreter run in the page.
 
-The compiler and the interpreter also run in the browser. The playground has five pipelines that SQL runs without complaint, each with the diagnostic Quern gives and a one-click fix, plus the generated SQL, the result rows and the inferred types for whatever you type.
+| Tab | What it shows |
+| --- | --- |
+| **Playground** | An editor with five pipelines that SQL runs without complaint, the diagnostic Quern gives for each, a one-click fix, and the generated SQL, result rows and inferred types for whatever you type |
+| **Language** | The full reference: declarations, column types, pipeline steps, operators, functions and all 23 diagnostics |
+| **Checks** | Each rule as a before and after pair. The verdict under each snippet is computed by the compiler when the page loads |
+| **Internals** | The compiler stages and how the two back ends are tested against each other |
 
-The data is editable too. The Data tab shows the sample files as tables and as CSV text; change a value and the results change, blank a non-null value or repeat a key and the load is rejected. You can add a file of your own and have a `source` declaration drafted from its header and rows.
+The data is editable too. The Data tab shows the sample files as tables and as CSV text; change a value and the results change, blank a non-null value or repeat a key and the load is rejected. You can add a file of your own and have a `source` declaration drafted from its header and rows. Reset console puts everything back.
 
 ```sh
 npm install
 npm run playground          # dev server
 npm run playground:build    # static site in dist-playground/
 ```
-
-The built page makes no network requests and ships a Content Security Policy that says so.
 
 ## Try it
 
@@ -126,17 +194,51 @@ Operators, loosest to tightest: `or`, `and`, `not`, comparisons and `is [not] nu
 Scalar functions: `hash`, `lower`, `upper`, `abs`, `round`, `convert(value, UNIT, rate)`.
 Aggregates: `sum`, `avg`, `min`, `max`, `count()`, `count_distinct`.
 
-## How it is built
+## Tests
 
-![Quern architecture: one front end, one typed program, two back ends tested against each other](docs/architecture.png)
+```sh
+npm test          # 84 tests
+npm run typecheck
+```
 
-The compiler is written in TypeScript with no runtime dependencies. `compile()` is a pure function from text to diagnostics, IR and SQL, so it runs in a browser as well as in Node.
+| File | What it covers |
+| --- | --- |
+| `test/diagnostics.test.ts` | A program that triggers each of the 23 diagnostic codes. The suite fails if a code in the catalogue has no case |
+| `test/types.test.ts` | Type inference: nullability and narrowing, keys and grain, units, PII, declaration order |
+| `test/interpreter.test.ts` | The interpreter's results, and its refusal of a CSV that breaks a source declaration |
+| `test/differential.test.ts` | Generated SQL on DuckDB against the interpreter, over the example data and 40 seeded random data sets |
+| `test/infer.test.ts` | Drafting a `source` declaration from a CSV file in the playground |
 
-There are two back ends on purpose. The SQL generator is the product. The interpreter is the oracle: the test suite runs every test pipeline through both, over the example data and over 40 randomly generated data sets, and requires identical rows. That check has already caught a real defect during development (the SQL read CSV columns by position while the interpreter read them by name).
+CI runs the type check, the tests and the build on every push. A second workflow runs the tests again, builds the playground and deploys it to GitHub Pages.
 
-### What the guarantees rest on
+## Security
 
-The checker reasons from what each `source` declares. If a file breaks a declaration (a null in a non-null column, a repeated key), the conclusions do not hold. So the declarations are checked against the data: the interpreter refuses such a file when it loads it, and `quern verify` emits a SQL query that returns one row per violated declaration.
+- The compiler has no runtime dependencies. DuckDB is a development dependency, used only by the differential tests.
+- The playground is a static site. Its Content Security Policy sets `connect-src 'none'`, so the page cannot make a network request, and scripts load only from the site itself.
+- Code and data typed into the playground stay in the page. Data files are capped at 8 files of 200 kB each.
+- `npm audit` reports no known vulnerabilities at the time of writing.
+
+## Project layout
+
+```
+src/
+  lexer.ts          text to tokens
+  parser.ts         tokens to a syntax tree, with error recovery
+  ast.ts            syntax tree types
+  checker.ts        type checker: nulls, keys and grain, units, PII
+  ir.ts             the typed program both back ends read
+  sql.ts            DuckDB SQL generator and the verify query
+  interpreter.ts    runs the typed program in memory, loads and checks CSV
+  diagnostics.ts    the 23 diagnostic codes and their rendering
+  md5.ts            the hash behind hash(), matching DuckDB's md5
+  index.ts          compile(): text in, diagnostics, typed program and SQL out
+  cli.ts            check, compile, run, types, verify
+test/               84 tests, described above
+examples/shop/      a complete program, five deliberate bugs, sample CSV data
+playground/         the browser playground (React, Vite)
+docs/               architecture diagram and demo thumbnail
+.github/workflows/  CI, and the GitHub Pages deploy
+```
 
 ## Limits, stated plainly
 
@@ -153,8 +255,8 @@ The ideas here are not new one by one, and Quern does not claim they are. Units 
 
 ## Status
 
-Built for the Syntax Summit hackathon. Working today: the compiler, the interpreter, the CLI, the browser playground and the test suite. Planned before the deadline: editor support and a language reference.
+Built for the Syntax Summit hackathon. Working today: the compiler, the interpreter, the command-line tool, the browser playground with its language reference, and the test suite. Not built yet: editor support for `.quern` files.
 
 ## License
 
-MIT
+[MIT](LICENSE)
