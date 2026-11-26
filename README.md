@@ -6,6 +6,8 @@
 
 **A typed data-pipeline language where data bugs are compile errors.** Quern compiles to SQL.
 
+**[Try it in the browser](https://demonjd2026-afk.github.io/quern/)**: nothing to install, and nothing leaves the page.
+
 SQL will happily run a query that double-counts revenue, drops the rows with a null in them, adds dollars to grams, or copies email addresses into a public table. Each of those is a wrong answer, not an error, so it is found later, by someone looking at a dashboard.
 
 Quern is a small language for writing the same pipelines in which those four mistakes do not type-check.
@@ -45,6 +47,8 @@ Three further rules follow from the same idea:
 - `limit` needs an `order by` directly before it, and the compiler warns when the order can have ties.
 
 ## Playground
+
+Live at **https://demonjd2026-afk.github.io/quern/**.
 
 The compiler and the interpreter also run in the browser. The playground has five pipelines that SQL runs without complaint, each with the diagnostic Quern gives and a one-click fix, plus the generated SQL, the result rows and the inferred types for whatever you type.
 
@@ -124,14 +128,7 @@ Aggregates: `sum`, `avg`, `min`, `max`, `count()`, `count_distinct`.
 
 ## How it is built
 
-```
-source text
-   │  lexer.ts        tokens
-   │  parser.ts       AST (recursive descent, resynchronises after an error)
-   │  checker.ts      typed IR: every step carries its relation type
-   ├──► sql.ts          DuckDB SQL: one view per pipeline, one CTE per step
-   └──► interpreter.ts  executes the same IR in memory
-```
+![Quern architecture: one front end, one typed program, two back ends tested against each other](docs/architecture.png)
 
 The compiler is written in TypeScript with no runtime dependencies. `compile()` is a pure function from text to diagnostics, IR and SQL, so it runs in a browser as well as in Node.
 
